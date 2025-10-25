@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
-import { Search, RotateCcw, LayoutGrid } from 'lucide-react'; 
+import { Search, RotateCcw, LayoutGrid, ArrowLeft, Loader2, BookOpen } from 'lucide-react'; 
 
 /**
- * @fileoverview Single-file React application for the Podcast Explorer.
- * All core logic and UI components are consolidated here.
+ * @fileoverview A single-file React application for the Podcast Explorer.
+ * All components, logic, and data are consolidated here due to environment constraints.
  */
 
 
-// --- STATIC DATA MOVED FROM data.js (to fix import error) ---
+// --- STATIC DATA (Genres) ---
 export const genres = [
     { id: 1, title: 'Personal Growth' },
     { id: 2, title: 'Investigative' },
@@ -32,21 +32,7 @@ export const GENRE_MAPPING = genres.reduce((acc, genre) => {
 }, {});
 // --- END STATIC DATA ---
 
-// --- CONTEXT SETUP ---
-const PodcastContext = createContext(null);
-
-/**
- * Custom hook to consume the podcast context.
- */
-const usePodcast = () => {
-  const context = useContext(PodcastContext);
-  if (!context) {
-    throw new Error('usePodcast must be used within a PodcastProvider');
-  }
-  return context;
-};
-
-// --- CONSTANTS AND UTILITIES ---
+// --- UTILITIES ---
 
 /** The number of podcast cards to display per page. */
 const ITEMS_PER_PAGE = 12;
@@ -54,28 +40,68 @@ const ITEMS_PER_PAGE = 12;
 /** The base URL for the podcast API. */
 const API_BASE_URL = 'https://podcast-api.netlify.app';
 
+/** Formats an ISO date string into a readable format. */
+const formatDate = (isoDate) => {
+  if (!isoDate) return 'Date Unavailable';
+  return new Date(isoDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+/**
+ * Fetches data from the API with a basic exponential backoff retry mechanism.
+ * @param {string} url - The API endpoint URL.
+ * @returns {Promise<object>} The JSON response data.
+ */
+async function fetchWithRetry(url) {
+  const maxRetries = 3;
+  let lastError = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            return await response.json();
+        }
+        lastError = new Error(`HTTP error! status: ${response.status} for ${url}`);
+    } catch (err) {
+        lastError = err;
+    }
+    console.warn(`Attempt ${i + 1} failed for ${url}. Retrying in ${2 ** i}s...`);
+    await new Promise(resolve => setTimeout(resolve, 1000 * (2 ** i)));
+  }
+  throw lastError; // Throw the last error after max retries
+}
+
 /** Fetches the list of all podcast shows from the API. */
 async function fetchAllPodcasts() {
   try {
-    // Add a basic exponential backoff retry logic in case of temporary network failure
-    const maxRetries = 3;
-    let lastError = null;
-    for (let i = 0; i < maxRetries; i++) {
-        const response = await fetch(API_BASE_URL);
-        if (response.ok) {
-            const data = await response.json();
-            return data;
-        }
-        lastError = new Error(`HTTP error! status: ${response.status}`);
-        console.warn(`Attempt ${i + 1} failed. Retrying in ${2 ** i}s...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (2 ** i)));
-    }
-    throw lastError; // Throw the last error after max retries
+    return await fetchWithRetry(API_BASE_URL);
   } catch (error) {
     console.error("Error fetching all podcasts:", error);
     throw new Error("Could not connect to the podcast API.");
   }
 }
+
+/** Fetches the details for a specific podcast show. */
+async function fetchShowDetails(id) {
+  if (!id) throw new Error("Show ID is required.");
+  try {
+    return await fetchWithRetry(`${API_BASE_URL}/id/${id}`);
+  } catch (error) {
+    console.error(`Error fetching details for show ${id}:`, error);
+    throw new Error(`Failed to load details for show ID ${id}.`);
+  }
+}
+
+// --- CONTEXT SETUP ---
+const PodcastContext = createContext(null);
+
+/** Custom hook to consume the podcast context. */
+const usePodcast = () => {
+  const context = useContext(PodcastContext);
+  if (!context) {
+    throw new Error('usePodcast must be used within a PodcastProvider');
+  }
+  return context;
+};
 
 // --- PODCAST CONTEXT PROVIDER (State and Logic) ---
 
@@ -92,8 +118,15 @@ const PodcastProvider = ({ children }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // NEW: State for Detail View
+  const [selectedShowId, setSelectedShowId] = useState(null);
+  const [detailedShow, setDetailedShow] = useState(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
 
-  // --- DATA FETCHING ---
+
+  // --- DATA FETCHING (List View) ---
   const loadShows = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -112,33 +145,51 @@ const PodcastProvider = ({ children }) => {
     loadShows();
   }, [loadShows]);
 
-  // --- HANDLERS ---
+  // --- DATA FETCHING (Detail View) ---
+  useEffect(() => {
+    if (!selectedShowId) {
+        setDetailedShow(null);
+        setDetailsError(null);
+        return;
+    }
+
+    const loadDetails = async () => {
+        setIsDetailsLoading(true);
+        setDetailsError(null);
+        try {
+            const data = await fetchShowDetails(selectedShowId);
+            setDetailedShow(data);
+        } catch (err) {
+            console.error("Fetch Detail Error:", err);
+            setDetailsError(err.message || 'Failed to load show details.');
+        } finally {
+            setIsDetailsLoading(false);
+        }
+    };
+    loadDetails();
+  }, [selectedShowId]);
+
+  // --- HANDLERS (List View) ---
   const handleSearchChange = useCallback((e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset page on search
+    setCurrentPage(1); 
   }, []);
 
   const handleSortChange = useCallback((e) => {
     setSortKey(e.target.value);
-    setCurrentPage(1); // Reset page on sort
+    setCurrentPage(1); 
   }, []);
 
   const handleGenreSelect = useCallback((e) => {
     const selectedId = Number(e.target.value);
-    // Since we moved data into this file, we can use the local imports
     setActiveGenreIds(selectedId === 0 ? [] : [selectedId]);
-    setCurrentPage(1); // Reset page on filter
+    setCurrentPage(1); 
   }, []);
 
   const handlePageChange = useCallback((pageNumber) => {
     setCurrentPage(pageNumber);
     // Scroll to the top of the content when changing pages
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-        mainContent.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' }); 
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
   }, []);
 
   const handleReset = useCallback(() => {
@@ -148,13 +199,27 @@ const PodcastProvider = ({ children }) => {
     setCurrentPage(1);
   }, []);
 
-  // --- CORE LOGIC: Filtering, Searching, Sorting ---
+  // --- HANDLERS (Detail View) ---
+  const handleViewDetails = useCallback((showId) => {
+    setSelectedShowId(showId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setSelectedShowId(null);
+    setDetailedShow(null);
+    setDetailsError(null);
+    // Optionally scroll back to top of list
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+  }, []);
+
+
+  // --- CORE LOGIC: Filtering, Searching, Sorting (Memoized) ---
   const filteredAndSearchedShows = useMemo(() => {
     let result = allShows;
 
     if (activeGenreIds.length > 0) {
       const filterId = activeGenreIds[0]; 
-      // API returns genres as an array of numbers, so we ensure comparison is correct
       result = result.filter(show => show.genres.includes(Number(filterId)));
     }
 
@@ -162,7 +227,7 @@ const PodcastProvider = ({ children }) => {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       result = result.filter(show => 
         show.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-        show.description.toLowerCase().includes(lowerCaseSearchTerm) // Search in description too for better results
+        show.description.toLowerCase().includes(lowerCaseSearchTerm)
       );
     }
 
@@ -171,7 +236,6 @@ const PodcastProvider = ({ children }) => {
 
   const sortedShows = useMemo(() => {
     const sorted = [...filteredAndSearchedShows];
-    // Convert date strings to Date objects for accurate comparison
     const dateComparer = (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime();
     
     switch (sortKey) {
@@ -202,32 +266,29 @@ const PodcastProvider = ({ children }) => {
     } else if (currentPage === 0 && totalPages > 0) {
       setCurrentPage(1);
     } else if (currentPage > 1 && totalPages === 0) {
-        // When results go to zero (e.g., search clears all), reset page
         setCurrentPage(1);
     }
   }, [totalPages, currentPage]);
 
   // --- CONTEXT VALUE ---
   const contextValue = useMemo(() => ({
-    paginatedShows,
-    totalItems,
-    totalPages,
-    currentPage,
-    searchTerm,
-    sortKey,
-    activeGenreIds,
-    isLoading,
-    error,
-    handleSearchChange,
-    handleSortChange,
-    handleGenreSelect,
-    handlePageChange,
-    handleReset,
-    GENRE_MAPPING, // Now directly available
-    genres // Now directly available
-  }), [
+    // List View State & Data
     paginatedShows, totalItems, totalPages, currentPage, searchTerm, sortKey, activeGenreIds, isLoading, error,
-    handleSearchChange, handleSortChange, handleGenreSelect, handlePageChange, handleReset
+    // List View Handlers
+    handleSearchChange, handleSortChange, handleGenreSelect, handlePageChange, handleReset,
+    // Detail View State & Data
+    selectedShowId, detailedShow, isDetailsLoading, detailsError,
+    // Detail View Handlers
+    handleViewDetails, handleCloseDetails,
+    // Static Data
+    GENRE_MAPPING, genres 
+  }), [
+    // List View dependencies
+    paginatedShows, totalItems, totalPages, currentPage, searchTerm, sortKey, activeGenreIds, isLoading, error,
+    handleSearchChange, handleSortChange, handleGenreSelect, handlePageChange, handleReset,
+    // Detail View dependencies
+    selectedShowId, detailedShow, isDetailsLoading, detailsError,
+    handleViewDetails, handleCloseDetails
   ]);
 
   return (
@@ -240,36 +301,44 @@ const PodcastProvider = ({ children }) => {
 
 // --- UI COMPONENTS ---
 
-/**
- * ShowCard component: Renders a single podcast show preview.
- */
-const ShowCard = ({ show }) => {
-  const { GENRE_MAPPING } = usePodcast();
+/** Renders loading state for the main list view. */
+const ListLoadingState = () => (
+    <div className="text-center py-20">
+      <Loader2 className="mx-auto h-12 w-12 text-indigo-500 animate-spin" />
+      <p className="mt-2 text-lg font-medium text-gray-600">Loading podcasts...</p>
+    </div>
+);
 
-  const formattedDate = new Date(show.updated).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+/** Renders general list error state. */
+const ListErrorState = ({ error }) => (
+    <div className="text-center py-20 bg-red-50 border border-red-200 rounded-xl">
+        <span className="text-red-500 text-xl font-semibold">Error:</span>
+        <p className="text-gray-600 mt-2">{error}</p>
+        <p className="text-sm text-gray-400">Please check your network connection or the API endpoint.</p>
+    </div>
+);
+
+
+/** Renders a single podcast show preview card. */
+const ShowCard = ({ show }) => {
+  const { GENRE_MAPPING, handleViewDetails } = usePodcast();
 
   // Function to map genre IDs to titles
   const getGenreTitles = (genreIds) => {
-    // Ensure all IDs are passed as numbers if they are stored as strings in 'show.genres'
-    return genreIds.map(id => GENRE_MAPPING[Number(id)] || GENRE_MAPPING[String(id)] || 'Unknown').join(', ');
+    return genreIds.map(id => GENRE_MAPPING[Number(id)] || 'Unknown').join(', ');
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden flex flex-col h-full">
       {/* Image Container */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 relative pt-[100%]">
         <img 
           src={show.image} 
           alt={show.title} 
-          className="w-full h-48 object-cover object-center" 
+          className="absolute inset-0 w-full h-full object-cover object-center rounded-t-xl" 
           onError={(e) => {
             e.target.onerror = null; 
-            // Placeholder image on error
-            e.target.src = `https://placehold.co/400x300/e5e7eb/4b5563?text=${show.title.substring(0, 15)}...`; 
+            e.target.src = `https://placehold.co/400x400/e0e7ff/4338ca?text=${show.title.substring(0, 1).toUpperCase()}`; 
           }}
         />
       </div>
@@ -286,16 +355,15 @@ const ShowCard = ({ show }) => {
           <div className="text-xs text-gray-500 space-y-1">
             <p><span className="font-medium text-gray-700">Seasons:</span> {show.seasons}</p>
             <p><span className="font-medium text-gray-700">Genres:</span> {getGenreTitles(show.genres)}</p>
-            <p><span className="font-medium text-gray-700">Last Updated:</span> {formattedDate}</p>
+            <p><span className="font-medium text-gray-700">Last Updated:</span> {formatDate(show.updated)}</p>
           </div>
         </div>
         
         {/* Detail Button */}
         <div className="mt-4">
           <button
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md"
-            // Placeholder onClick for future implementation
-            onClick={() => console.log(`Viewing show: ${show.title}`)} 
+            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow-md"
+            onClick={() => handleViewDetails(show.id)} 
           >
             View Details
           </button>
@@ -306,14 +374,12 @@ const ShowCard = ({ show }) => {
 };
 
 
-/**
- * Filter, Sort, and Search Bar Component
- */
+/** Renders the Search, Filter, and Sort Bar Component. */
 const FilterBar = () => {
   const { 
     searchTerm, sortKey, activeGenreIds,
     handleSearchChange, handleSortChange, handleGenreSelect, handleReset,
-    genres // Genres are now local to the file, but accessed via context
+    genres
   } = usePodcast();
 
   const selectedGenreId = activeGenreIds.length > 0 ? activeGenreIds[0] : 0;
@@ -330,7 +396,7 @@ const FilterBar = () => {
             placeholder="Search by title or description..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm"
           />
         </div>
 
@@ -338,11 +404,10 @@ const FilterBar = () => {
         <select
           value={selectedGenreId}
           onChange={handleGenreSelect}
-          className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 appearance-none"
+          className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 appearance-none shadow-sm"
         >
           <option value={0}>All Genres</option>
           {genres.map(genre => (
-            // Ensure ID is a number for the select value
             <option key={genre.id} value={genre.id}>{genre.title}</option>
           ))}
         </select>
@@ -351,7 +416,7 @@ const FilterBar = () => {
         <select
           value={sortKey}
           onChange={handleSortChange}
-          className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 appearance-none"
+          className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 appearance-none shadow-sm"
         >
           <option value="newest">Sort: Newest</option>
           <option value="title_asc">Sort: Title (A-Z)</option>
@@ -363,7 +428,7 @@ const FilterBar = () => {
       <div className="mt-4 flex justify-end">
         <button
           onClick={handleReset}
-          className="flex items-center space-x-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150"
+          className="flex items-center space-x-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition duration-150"
         >
           <RotateCcw className="h-4 w-4" />
           <span>Reset Filters</span>
@@ -373,9 +438,7 @@ const FilterBar = () => {
   );
 };
 
-/**
- * Pagination Controls Component
- */
+/** Renders the Pagination Controls. */
 const Pagination = () => {
   const { currentPage, totalPages, handlePageChange } = usePodcast();
 
@@ -383,7 +446,7 @@ const Pagination = () => {
 
   const renderPageButtons = () => {
     const pages = [];
-    const maxButtons = 5; // Max number of visible page buttons
+    const maxButtons = 5; 
 
     // Logic to calculate which page numbers to show
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
@@ -423,8 +486,8 @@ const Pagination = () => {
           page === '...'
             ? 'text-gray-500 cursor-default'
             : page === currentPage
-            ? 'bg-blue-600 text-white shadow-lg'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            ? 'bg-indigo-600 text-white shadow-lg'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 shadow-sm'
         }`}
       >
         {page}
@@ -438,7 +501,7 @@ const Pagination = () => {
       <button
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
       >
         Previous
       </button>
@@ -450,7 +513,7 @@ const Pagination = () => {
       <button
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
       >
       Next
       </button>
@@ -459,40 +522,22 @@ const Pagination = () => {
 };
 
 
-/**
- * Main Content Display Component (Grid of Cards)
- */
+/** Renders the main grid of podcast cards. */
 const ShowGrid = () => {
   const { paginatedShows, isLoading, error, totalItems } = usePodcast();
 
-  if (isLoading) {
-    return (
-      <div className="text-center py-20">
-        <LayoutGrid className="mx-auto h-12 w-12 text-blue-500 animate-pulse" />
-        <p className="mt-2 text-lg font-medium text-gray-600">Loading podcasts...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-20">
-        <span className="text-red-500 text-xl font-semibold">Error:</span>
-        <p className="text-gray-600 mt-2">{error}</p>
-        <p className="text-sm text-gray-400">Please check your network connection or the API endpoint.</p>
-      </div>
-    );
-  }
+  if (isLoading) return <ListLoadingState />;
+  if (error) return <ListErrorState error={error} />;
   
   if (totalItems === 0) {
     return (
       <div className="text-center py-20">
+        <LayoutGrid className="mx-auto h-12 w-12 text-gray-400 mb-4" />
         <p className="text-xl font-semibold text-gray-700">No Podcasts Found</p>
         <p className="text-gray-500 mt-2">Try adjusting your search term or filters.</p>
       </div>
     );
   }
-
 
   return (
     <>
@@ -507,6 +552,124 @@ const ShowGrid = () => {
       <Pagination />
     </>
   );
+};
+
+// --- NEW COMPONENT: SHOW DETAILS VIEW (PLACEHOLDER) ---
+
+/** Renders the details for a specific podcast show. */
+const ShowDetails = () => {
+    const { detailedShow, isDetailsLoading, detailsError, handleCloseDetails } = usePodcast();
+
+    // Loading State
+    if (isDetailsLoading) {
+        return (
+            <div className="text-center py-20">
+                <Loader2 className="mx-auto h-12 w-12 text-indigo-500 animate-spin" />
+                <p className="mt-2 text-lg font-medium text-gray-600">Loading show details...</p>
+            </div>
+        );
+    }
+
+    // Error State
+    if (detailsError) {
+        return (
+            <div className="text-center py-20 bg-red-50 border border-red-200 rounded-xl">
+                <span className="text-red-500 text-xl font-semibold">Details Error:</span>
+                <p className="text-gray-600 mt-2">{detailsError}</p>
+                <button 
+                    onClick={handleCloseDetails}
+                    className="mt-4 flex items-center mx-auto space-x-2 text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to List</span>
+                </button>
+            </div>
+        );
+    }
+
+    // Placeholder Content until fully implemented
+    if (!detailedShow) {
+        return (
+            <div className="text-center py-20">
+                <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                <h2 className="text-2xl font-bold text-gray-800 mt-4">Show Details Placeholder</h2>
+                <p className="text-lg text-gray-600 mt-2">
+                    {/* Display a dummy text or the selected ID */}
+                    Details for a show ID are about to load here!
+                </p>
+                <div className="mt-6">
+                    <button
+                        onClick={handleCloseDetails}
+                        className="flex items-center mx-auto space-x-2 px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-md"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        <span>Back to All Shows</span>
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
+    // --- Actual Placeholder Rendering for the Fetched Detailed Show ---
+    return (
+        <div className="bg-white p-8 rounded-xl shadow-2xl border border-gray-100">
+            <button
+                onClick={handleCloseDetails}
+                className="flex items-center space-x-2 mb-6 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            >
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to All Shows</span>
+            </button>
+            
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+                <img 
+                    src={detailedShow.image} 
+                    alt={detailedShow.title} 
+                    className="w-full md:w-64 h-auto object-cover rounded-xl shadow-lg flex-shrink-0"
+                    onError={(e) => {
+                        e.target.onerror = null; 
+                        e.target.src = `https://placehold.co/400x400/e0e7ff/4338ca?text=${detailedShow.title.substring(0, 1).toUpperCase()}`; 
+                    }}
+                />
+                
+                <div className="flex-grow">
+                    <h1 className="text-4xl font-extrabold text-gray-900 mb-2">{detailedShow.title}</h1>
+                    <p className="text-lg text-gray-600 mb-4">{detailedShow.description}</p>
+                    
+                    <div className="text-sm text-gray-700 space-y-1">
+                        <p><span className="font-semibold text-indigo-600">Total Seasons:</span> {detailedShow.seasons.length}</p>
+                        <p><span className="font-semibold text-indigo-600">Last Updated:</span> {formatDate(detailedShow.updated)}</p>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                        <p className="font-bold text-indigo-700">Next Step:</p>
+                        <p className="text-sm text-indigo-600">This view now shows the fetched data! We need to implement the interactive seasons and episodes list below.</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Placeholder for Seasons and Episodes UI */}
+            <div className="mt-10">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4 border-b pb-2">Seasons</h2>
+                <div className="text-gray-500">
+                    <p>Episodes and playable audio will be rendered here.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+/** Renders either the List View or the Detail View based on state. */
+const AppContent = () => {
+    const { selectedShowId } = usePodcast();
+
+    return selectedShowId ? <ShowDetails /> : (
+        <>
+            <FilterBar />
+            <ShowGrid />
+        </>
+    );
 };
 
 
@@ -527,8 +690,7 @@ const App = () => {
         </header>
 
         <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-          <FilterBar />
-          <ShowGrid />
+          <AppContent />
         </main>
 
         <footer className="bg-white border-t border-gray-100 mt-12 py-6 text-center text-gray-500 text-sm">
