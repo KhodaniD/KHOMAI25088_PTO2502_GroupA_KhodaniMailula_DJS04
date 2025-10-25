@@ -1,5 +1,9 @@
-// Please note that this file contains only the genre data. All other podcast information required for this challenge can be accessed via the API at: https://podcast-api.netlify.app/
+/**
+ * @fileoverview Static genre data for the Podcast Explorer application.
+ * This data is exported for use in the main application file.
+ */
 
+// OFFICIAL GENRE DATA
 export const genres = [
   {
     id: 1,
@@ -112,3 +116,9 @@ export const genres = [
     ],
   },
 ];
+
+/** Creates a genre mapping object for quick lookup based on the genre ID. */
+export const GENRE_MAPPING = genres.reduce((acc, genre) => {
+  acc[genre.id] = genre.title;
+  return acc;
+}, {});
