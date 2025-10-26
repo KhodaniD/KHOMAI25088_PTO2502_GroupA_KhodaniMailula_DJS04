@@ -1,38 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Removed all file extensions. We rely on the bundler to resolve them.
-import { genres, GENRE_MAPPING } from './data';
-import Header from './components/Header';
-import ControlPanel from './components/ControlPanel';
-import PodcastGrid from './components/PodcastGrid';
-import PaginationControls from './components/PaginationControls';
-import LoadingAndError from './components/LoadingAndError';
-import './App.css'; 
+// Correct import for sibling data file
+import { genres, GENRE_MAPPING } from './utils/data.js'; 
+import Header from './components/Header.jsx';
+import ControlPanel from './components/ControlPanel.jsx';
+import PodcastGrid from './components/PodcastGrid.jsx';
+import PaginationControls from './components/PaginationControls.jsx';
+import { LoadingAndError } from "./components/LoadingAndError.jsx";
+import './MainApp.css'; 
 
-// Define how many items to show per page
 const ITEMS_PER_PAGE = 12;
 
-/**
- * The main application component.
- * Manages all application state, data fetching, filtering, sorting, and pagination logic.
- */
-function App() {
-  // --- State Declarations ---
+function MainApp() {
   const [allPodcasts, setAllPodcasts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // --- Control States ---
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState(''); 
   const [sortOrder, setSortOrder] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
 
-  // --- Data Fetching ---
-
   useEffect(() => {
     const fetchPodcasts = async () => {
       setIsLoading(true);
       try {
+        // Fetch data from the API
         const response = await fetch('https://podcast-api.netlify.app');
         if (!response.ok) {
           throw new Error('Failed to fetch podcast data.');
@@ -48,26 +39,24 @@ function App() {
     fetchPodcasts();
   }, []);
 
-  // --- Derived State (Filtering, Sorting) ---
-
   const filteredAndSortedPodcasts = useMemo(() => {
     let processedPodcasts = [...allPodcasts];
-
-    // 1. Apply Search Filter
+    
+    // Filter by search term
     if (searchTerm) {
       processedPodcasts = processedPodcasts.filter(podcast =>
         podcast.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // 2. Apply Genre Filter
+    
+    // Filter by selected genre
     if (selectedGenre) {
       processedPodcasts = processedPodcasts.filter(podcast =>
         podcast.genres.includes(Number(selectedGenre))
       );
     }
-
-    // 3. Apply Sorting
+    
+    // Sort logic
     switch (sortOrder) {
       case 'a-z':
         processedPodcasts.sort((a, b) => a.title.localeCompare(b.title));
@@ -75,8 +64,12 @@ function App() {
       case 'z-a':
         processedPodcasts.sort((a, b) => b.title.localeCompare(a.title));
         break;
+      case 'oldest':
+        processedPodcasts.sort((a, b) => new Date(a.updated) - new Date(b.updated));
+        break;
       case 'newest':
       default:
+        // Default to newest
         processedPodcasts.sort((a, b) => new Date(b.updated) - new Date(a.updated));
         break;
     }
@@ -84,12 +77,12 @@ function App() {
     return processedPodcasts;
   }, [allPodcasts, searchTerm, selectedGenre, sortOrder]);
 
-  // --- Pagination Logic ---
-
+  // Reset page when filters/search change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedGenre, sortOrder]);
 
+  // Pagination logic
   const paginatedPodcasts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -98,16 +91,12 @@ function App() {
 
   const totalPages = Math.ceil(filteredAndSortedPodcasts.length / ITEMS_PER_PAGE);
 
-  // --- Event Handlers ---
-
   const handleReset = () => {
     setSearchTerm('');
     setSelectedGenre('');
     setSortOrder('newest');
     setCurrentPage(1);
   };
-
-  // --- Render Logic ---
 
   if (isLoading || error) {
     return <LoadingAndError 
@@ -124,14 +113,11 @@ function App() {
         <ControlPanel
           searchTerm={searchTerm}
           onSearchChange={(e) => setSearchTerm(e.target.value)}
-          
           genres={genres}
           selectedGenre={selectedGenre}
           onGenreChange={(e) => setSelectedGenre(e.target.value)}
-          
           sortOrder={sortOrder}
           onSortChange={(e) => setSortOrder(e.target.value)}
-          
           onReset={handleReset}
         />
         
@@ -160,4 +146,4 @@ function App() {
   );
 }
 
-export default App;
+export default MainApp;

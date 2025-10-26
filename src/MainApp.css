@@ -1,0 +1,284 @@
+/* --- Global Styles --- */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-light: #f8f9fa;
+    --text-dark: #212529;
+    --border-light: #dee2e6;
+    --shadow-medium: rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-dark);
+    margin: 0;
+    padding: 0;
+}
+
+.App {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    padding: 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    flex-grow: 1;
+}
+
+/* --- Header Styles --- */
+.app-header {
+    background-color: var(--text-dark);
+    color: white;
+    padding: 20px 0;
+    box-shadow: 0 2px 4px var(--shadow-medium);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.app-header h1 {
+    margin: 0 0 5px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.app-header p {
+    margin: 0;
+    font-size: 1rem;
+    color: #cccccc;
+}
+
+/* --- Control Panel Styles (Filters and Sort) --- */
+.control-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 20px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.control-panel input,
+.control-panel select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 1rem;
+    flex-grow: 1;
+    min-width: 150px;
+}
+
+.control-panel button {
+    padding: 10px 20px;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.control-panel button:hover {
+    background-color: #5a6268;
+}
+
+/* --- Results Info and No Results --- */
+.results-info {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+}
+
+.no-results-message {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+    border: 1px dashed var(--border-light);
+    border-radius: 8px;
+    margin-top: 30px;
+}
+
+/* --- Podcast Grid Styles --- */
+.podcast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    margin-top: 20px;
+}
+
+/* --- Podcast Card Styles --- */
+.podcast-card {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.podcast-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px var(--shadow-medium);
+}
+
+.card-image-container {
+    width: 100%;
+    /* 1:1 Aspect Ratio for cover art */
+    padding-top: 100%; 
+    position: relative;
+    overflow: hidden;
+    background-color: #eee;
+}
+
+.card-image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content h3 {
+    font-size: 1.25rem;
+    margin: 0 0 5px 0;
+    color: var(--primary-color);
+    /* Limit title to two lines */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.card-content p {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    margin: 0 0 10px 0;
+}
+
+.card-content .updated-date {
+    font-size: 0.8rem;
+    color: #999;
+    margin-top: auto;
+}
+
+.card-genre {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: var(--text-dark);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* --- Loading and Error Styles --- */
+.loading-error-container {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.loading-error-container h2 {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.loading-error-container.is-error h2 {
+    color: #dc3545; /* Red for errors */
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Pagination Styles --- */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    padding: 20px 0;
+}
+
+.pagination-controls button {
+    padding: 10px 15px;
+    margin: 0 5px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.pagination-controls button:disabled {
+    background-color: var(--secondary-color);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.pagination-controls span {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 15px;
+    color: var(--text-dark);
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .app-header h1 {
+        font-size: 2rem;
+    }
+    
+    .podcast-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .control-panel {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .control-panel input,
+    .control-panel select,
+    .control-panel button {
+        min-width: 100%;
+    }
+}
