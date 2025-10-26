@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// Correct import for sibling data file
+// Imports necessary data and components
 import { genres, GENRE_MAPPING } from './utils/data.js'; 
 import Header from './components/Header.jsx';
 import ControlPanel from './components/ControlPanel.jsx';
@@ -10,53 +10,67 @@ import './MainApp.css';
 
 const ITEMS_PER_PAGE = 12;
 
+/**
+ * The main application component that manages state for the podcast browser.
+ */
 function MainApp() {
   const [allPodcasts, setAllPodcasts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState(''); 
   const [sortOrder, setSortOrder] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
 
+  // --- Data Fetching Effect ---
   useEffect(() => {
     const fetchPodcasts = async () => {
       setIsLoading(true);
       try {
-        // Fetch data from the API
         const response = await fetch('https://podcast-api.netlify.app');
         if (!response.ok) {
           throw new Error('Failed to fetch podcast data.');
         }
         const data = await response.json();
-        setAllPodcasts(data);
+
+        // CRITICAL FIX: Process data to create genre names (genreTitles)
+        const processedData = data.map(podcast => ({
+          ...podcast,
+          genreTitles: podcast.genres.map(genreId => GENRE_MAPPING[genreId]).filter(Boolean)
+        }));
+        
+        setAllPodcasts(processedData);
+
       } catch (err) {
         setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
+    
     fetchPodcasts();
   }, []);
 
+  // --- Memoized Derived State (Search, Filter, Sort) ---
   const filteredAndSortedPodcasts = useMemo(() => {
     let processedPodcasts = [...allPodcasts];
     
-    // Filter by search term
+    // 1. Filter by search term
     if (searchTerm) {
       processedPodcasts = processedPodcasts.filter(podcast =>
         podcast.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
-    // Filter by selected genre
+    // 2. Filter by selected genre
     if (selectedGenre) {
       processedPodcasts = processedPodcasts.filter(podcast =>
         podcast.genres.includes(Number(selectedGenre))
       );
     }
     
-    // Sort logic
+    // 3. Sort logic
     switch (sortOrder) {
       case 'a-z':
         processedPodcasts.sort((a, b) => a.title.localeCompare(b.title));
@@ -69,7 +83,6 @@ function MainApp() {
         break;
       case 'newest':
       default:
-        // Default to newest
         processedPodcasts.sort((a, b) => new Date(b.updated) - new Date(a.updated));
         break;
     }
@@ -77,12 +90,11 @@ function MainApp() {
     return processedPodcasts;
   }, [allPodcasts, searchTerm, selectedGenre, sortOrder]);
 
-  // Reset page when filters/search change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedGenre, sortOrder]);
 
-  // Pagination logic
+  // --- Pagination Logic ---
   const paginatedPodcasts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -98,6 +110,7 @@ function MainApp() {
     setCurrentPage(1);
   };
 
+  // --- Render Logic ---
   if (isLoading || error) {
     return <LoadingAndError 
              message={isLoading ? "Loading podcasts..." : `Error: ${error}`}
@@ -132,7 +145,6 @@ function MainApp() {
         ) : (
           <PodcastGrid
             podcasts={paginatedPodcasts}
-            genreMapping={GENRE_MAPPING}
           />
         )}
         

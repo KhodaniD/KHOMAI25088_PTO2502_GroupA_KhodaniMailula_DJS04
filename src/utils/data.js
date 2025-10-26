@@ -1,30 +1,34 @@
 /**
- * @fileoverview Static genre data for the Podcast Explorer application.
- * This file provides the list of genres and a mapping object for quick lookup.
+ * Global constants and genre mappings for the podcast application.
  */
 
-// Array of all available genres with their respective IDs and titles.
-export const genres = [
-    { id: 1, title: 'Personal Growth' },
-    { id: 2, title: 'Investigative' },
-    { id: 3, title: 'History' },
-    { id: 4, title: 'Comedy' },
-    { id: 5, title: 'Entertainment' },
-    { id: 6, title: 'Business' },
-    { id: 7, title: 'Fiction' },
-    { id: 8, title: 'News' },
-    { id: 9, title: 'Kids and Family' },
-    { id: 10, title: 'Science' },
-    { id: 11, title: 'Technology' },
-    { id: 12, title: 'Health & Fitness' },
-    { id: 13, title: 'Arts' },
-    { id: 14, title: 'Music' },
-    { id: 15, title: 'True Crime' }
-];
+// Genre ID to Title mapping (Comprehensive list)
+export const GENRE_MAPPING = {
+    1: 'Personal Growth', 2: 'True Crime', 3: 'History', 4: 'Comedy', 
+    5: 'Dating & Relationships', 6: 'Fiction', 7: 'News', 8: 'Kids & Family', 
+    9: 'Arts', 10: 'Science', 11: 'Music', 12: 'TV & Film', 
+    13: 'Religion & Spirituality', 14: 'Documentary', 15: 'Sports', 16: 'Financial', 
+    17: 'Health & Fitness', 18: 'Technology', 19: 'Culture', 20: 'Banter', 
+    21: 'Business', 22: 'Politics', 23: 'Education', 24: 'Entertainment'
+};
 
-// Mapping object for quickly looking up a genre title by its ID.
-export const GENRE_MAPPING = genres.reduce((acc, genre) => {
-    // Keys are stored as numbers for direct comparison with API response IDs.
-    acc[genre.id] = genre.title; 
-    return acc;
-}, {});
+// CRITICAL FIX: Array of genres for filter dropdowns (MainApp.jsx imports this as 'genres')
+export const genres = Object.keys(GENRE_MAPPING).map(id => ({
+    id: Number(id),
+    title: GENRE_MAPPING[id]
+}));
+
+// Optional exports for consistency
+export const ITEMS_PER_PAGE = 20;
+export const API_BASE_URL = 'https://podcast-api.netlify.app';
+
+export const formatDate = (isoString) => {
+    if (!isoString) return 'Unknown Date';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {
+        console.error('Failed to parse date:', e);
+        return 'Invalid Date';
+    }
+};

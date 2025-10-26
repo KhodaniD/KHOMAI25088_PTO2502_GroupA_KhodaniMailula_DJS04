@@ -1,18 +1,7 @@
 import React from 'react';
 
 /**
- * Renders the search, filter, and sort controls in the minimalist style, 
- * matching the visual layout of the reference image.
- * * @param {Object} props - The component props.
- * @param {string} props.searchTerm - The current search term.
- * @param {function} props.onSearchChange - Handler for search input change.
- * @param {Array<Object>} props.genres - List of genre objects.
- * @param {string} props.selectedGenre - The currently selected genre ID.
- * @param {function} props.onGenreChange - Handler for genre select change.
- * @param {string} props.sortOrder - The currently selected sort order.
- * @param {function} props.onSortChange - Handler for sort select change.
- * @param {function} props.onReset - Handler to reset all filters.
- * @returns {JSX.Element} The control panel element.
+ * Renders the search, filter, and sort controls.
  */
 const ControlPanel = ({
   searchTerm,
@@ -27,20 +16,23 @@ const ControlPanel = ({
   return (
     <div className="control-panel">
       
-      {/* Search Bar matching the image style: "Search podcasts..." */}
+      {/* Search Bar - Positioned first for Left placement by CSS */}
       <div className="search-container">
         <input
           type="text"
           placeholder="Search podcasts..."
           value={searchTerm}
+          // FIX: Added 'id' to fix accessibility warning ("A form field element should have an id...")
+          id="search-input" 
           onChange={onSearchChange}
           className="control-input"
           aria-label="Search by podcast title"
         />
       </div>
 
-      {/* Grouped Select Controls */}
+      {/* Grouped Select Controls - Positioned second for Right placement by CSS */}
       <div className="control-group">
+        
         {/* Genre Select */}
         <div className="control-select-wrapper">
           <label htmlFor="genre-select" className="control-label">Genre:</label>
@@ -52,10 +44,10 @@ const ControlPanel = ({
             aria-label="Select Genre Filter"
           >
             <option value="">All Genres</option>
-            {/* The structure of 'genres' is assumed to be [{ id: 1, name: 'Comedy' }, ...] */}
+            {/* FIX: Uses genre.title, relies on correct data.js export */}
             {genres.map(genre => (
               <option key={genre.id} value={genre.id}>
-                {genre.name}
+                {genre.title} 
               </option>
             ))}
           </select>
@@ -71,16 +63,13 @@ const ControlPanel = ({
             className="control-select"
             aria-label="Select Sort Order"
           >
-            {/* The actual sort options here depend on your application logic, 
-                but these are standard options. */}
-            <option value="newest">Default</option> {/* Set a clean default visible option */}
-            <option value="updated_desc">Recently Updated</option>
+            <option value="newest">Default</option>
             <option value="a-z">A-Z Title</option>
             <option value="z-a">Z-A Title</option>
+            <option value="oldest">Oldest</option>
           </select>
         </div>
 
-        {/* Reset Button - hidden via CSS in MainApp.css */}
         <button onClick={onReset} className="reset-button">
           Reset Filters
         </button>

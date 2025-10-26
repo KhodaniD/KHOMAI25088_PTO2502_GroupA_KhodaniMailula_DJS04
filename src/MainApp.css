@@ -18,35 +18,36 @@ main {
     padding-bottom: 40px; 
 }
 
-/* ------------------- Header Styling (MINIMALIST) ------------------- */
+/* ------------------- Header Styling ------------------- */
 .app-header {
     display: flex;
     justify-content: flex-start; 
     align-items: center;
-    padding: 20px 50px; 
+    padding: 15px 50px; /* Adjusted Padding */
     margin-bottom: 0; 
     border-bottom: 1px solid #ddd;
     background-color: white; 
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+/* --- New Container for Logo/Icon Alignment --- */
+.app-logo-container {
+    display: flex;
+    align-items: center; 
+}
+
 .app-title {
     font-size: 1.5em; 
     font-weight: 600;
     color: #333; 
-    margin: 0;
+    margin: 0; 
 }
-
-.app-subtitle {
-    /* Hidden as per your design */
-    display: none; 
-}
-
 
 /* ------------------- Control Panel Styling ------------------- */
 .control-panel {
     display: flex;
-    justify-content: flex-end; 
+    /* FIX: Sets search bar left and filter group right */
+    justify-content: space-between; 
     align-items: center;
     gap: 15px;
     padding: 10px 50px; 
@@ -55,8 +56,45 @@ main {
     flex-wrap: wrap; 
 }
 
+/* --- MOBILE RESPONSIVE FIX (Header/Controls/Grid) --- */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 15px 20px; 
+        justify-content: center; 
+    }
+    .control-panel {
+        padding: 10px 15px; 
+        justify-content: center; 
+        flex-direction: column; /* Stacks controls vertically on mobile */
+    }
+    .search-container {
+        width: 100%;
+        max-width: 100%;
+    }
+    .control-input {
+        width: 100%;
+    }
+    .control-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .control-select {
+        flex-grow: 1;
+    }
+    .podcast-grid {
+        padding: 20px 20px;
+        grid-template-columns: repeat(3, 1fr); 
+    }
+    @media (max-width: 480px) {
+        .podcast-grid {
+            grid-template-columns: repeat(2, 1fr); 
+            padding: 20px 15px;
+        }
+    }
+}
+/* --- END OF MOBILE FIX --- */
+
 .search-container {
-    flex-grow: 1; 
     max-width: 300px; 
 }
 
@@ -69,7 +107,6 @@ main {
 }
 
 .control-label {
-    /* Hidden as per your design */
     display: none; 
 }
 
@@ -81,6 +118,7 @@ main {
     font-size: 0.9em;
     height: 35px; 
     background-color: white;
+    box-sizing: border-box; 
 }
 
 .control-input {
@@ -91,8 +129,11 @@ main {
 }
 
 .control-select {
+    /* --- FIX: Hides the native browser dropdown arrow (removes "two arrows" bug) --- */
+    appearance: none;
+    -webkit-appearance: none;
+
     padding-right: 30px; 
-    /* Custom SVG for dropdown arrow (base64 encoded) */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%236c757d' d='M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
@@ -101,21 +142,17 @@ main {
     border: 1px solid #ddd;
 }
 
-.reset-button {
-    /* Hidden as per your design */
+.reset-button,
+.results-info,
+.no-results-message,
+.app-subtitle {
     display: none; 
 }
 
-.results-info {
-    /* Hidden as per your design */
-    display: none; 
-}
 
-
-/* ------------------- Podcast Grid Layout (8 COLUMN FIX) ------------------- */
+/* ------------------- Podcast Grid Layout (8 COLUMN) ------------------- */
 .podcast-grid {
     display: grid;
-    /* Default for medium screens/smaller views */
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
     gap: 15px; 
     padding: 20px 50px;
@@ -123,18 +160,15 @@ main {
     max-width: 100%;
 }
 
-/* 8 Columns on Wide Desktop (1400px and up) - AS PER REFERENCE IMAGE */
 @media (min-width: 1400px) { 
     .podcast-grid {
-        /* Forces exactly 8 equal columns */
         grid-template-columns: repeat(8, 1fr); 
         gap: 20px; 
-        max-width: 1800px; /* Adjusted to better fit 8 cards */
+        max-width: 1800px; 
         padding: 20px 40px;
     }
 }
 
-/* Medium Desktop (e.g., 992px to 1399px) - 5 Columns */
 @media (max-width: 1399px) and (min-width: 992px) { 
     .podcast-grid {
         grid-template-columns: repeat(5, 1fr); 
@@ -142,25 +176,6 @@ main {
         gap: 20px;
     }
 }
-
-/* Tablet (e.g., 768px to 991px) - 4 Columns */
-@media (max-width: 991px) {
-    .podcast-grid {
-        grid-template-columns: repeat(4, 1fr); 
-        padding: 20px 20px;
-        gap: 15px;
-    }
-}
-
-/* Mobile View (e.g., 480px and below) - 2 Columns */
-@media (max-width: 480px) {
-    .podcast-grid {
-        grid-template-columns: repeat(2, 1fr); 
-        padding: 20px 15px;
-        gap: 10px;
-    }
-}
-
 
 /* ------------------- Podcast Card Details ------------------- */
 .podcast-card {
@@ -192,16 +207,13 @@ main {
     font-size: 0.9em; 
     font-weight: 500; 
     margin: 0 0 2px 0; 
-    
-    /* Webkit line clamping for 2 lines */
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* The old property for Safari/WebKit */
-    line-clamp: 2;         /* The new, standard property */
-
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     color: #222;
-    min-height: 2.2em; /* Ensures space for 2 lines */
+    min-height: 2.2em;
 }
 
 .podcast-seasons {
@@ -221,7 +233,7 @@ main {
 .podcast-updated {
     font-size: 0.75em; 
     color: #999;
-    margin-top: 0;
+    margin-top: 4px; 
     padding-top: 0; 
     line-height: 1.2;
 }
