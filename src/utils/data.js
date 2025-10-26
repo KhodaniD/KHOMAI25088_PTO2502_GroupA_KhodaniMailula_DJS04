@@ -1,5 +1,6 @@
 /**
  * Global constants and genre mappings for the podcast application.
+ * All data related to genre ID mapping and filter arrays is consolidated here.
  */
 
 // Genre ID to Title mapping (Comprehensive list)
@@ -12,16 +13,22 @@ export const GENRE_MAPPING = {
     21: 'Business', 22: 'Politics', 23: 'Education', 24: 'Entertainment'
 };
 
-// CRITICAL FIX: Array of genres for filter dropdowns (MainApp.jsx imports this as 'genres')
+// Array of genres for filter dropdowns (MainApp.jsx imports this as 'genres')
 export const genres = Object.keys(GENRE_MAPPING).map(id => ({
     id: Number(id),
     title: GENRE_MAPPING[id]
 }));
 
-// Optional exports for consistency
-export const ITEMS_PER_PAGE = 20;
+// Application-wide constants
+export const ITEMS_PER_PAGE = 14; // Updated as requested
 export const API_BASE_URL = 'https://podcast-api.netlify.app';
 
+/**
+ * @function formatDate
+ * @description Converts an ISO date string to a readable local date.
+ * @param {string} isoString The ISO date string.
+ * @returns {string} The formatted date string.
+ */
 export const formatDate = (isoString) => {
     if (!isoString) return 'Unknown Date';
     try {

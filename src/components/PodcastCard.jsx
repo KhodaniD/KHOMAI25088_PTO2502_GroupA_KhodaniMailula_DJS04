@@ -1,5 +1,6 @@
 import React from 'react';
 
+// Date formatting logic is self-contained for performance
 const formatDate = (dateString) => {
     if (!dateString) return 'Unknown Date';
     try {
@@ -11,6 +12,12 @@ const formatDate = (dateString) => {
     }
 };
 
+/**
+ * Renders a single podcast card with image, title, seasons, genre names, and update date.
+ * @param {Object} props - The component props.
+ * @param {Object} props.podcast - The podcast object containing details.
+ * @returns {JSX.Element} The podcast card component.
+ */
 const PodcastCard = React.memo(({ podcast }) => {
   
   if (!podcast) return null;
@@ -24,6 +31,7 @@ const PodcastCard = React.memo(({ podcast }) => {
         src={imageUrl} 
         alt={`Cover art for ${podcast.title}`} 
         className="podcast-image"
+        // Fallback for broken images
         onError={(e) => {
           e.target.onerror = null; 
           e.target.src = 'https://placehold.co/600x600/cccccc/333333?text=No+Image';
@@ -36,7 +44,7 @@ const PodcastCard = React.memo(({ podcast }) => {
           {podcast.seasons} {podcast.seasons === 1 ? 'season' : 'seasons'}
         </p>
 
-        {/* CRITICAL FIX: Maps over the 'podcast.genreTitles' array (the names) */}
+        {/* Maps over the 'podcast.genreTitles' array (the names) */}
         {podcast.genreTitles && podcast.genreTitles.map(title => (
           <p key={title} className="podcast-genre">
             {title}

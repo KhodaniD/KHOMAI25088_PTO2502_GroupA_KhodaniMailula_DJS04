@@ -2,6 +2,8 @@ import React from 'react';
 
 /**
  * Renders the search, filter, and sort controls.
+ * This component handles the input fields and selection menus for filtering 
+ * and sorting the podcast list.
  */
 const ControlPanel = ({
   searchTerm,
@@ -16,13 +18,13 @@ const ControlPanel = ({
   return (
     <div className="control-panel">
       
-      {/* Search Bar - Positioned first for Left placement by CSS */}
+      {/* Search Bar */}
       <div className="search-container">
         <input
           type="text"
           placeholder="Search podcasts..."
           value={searchTerm}
-          // FIX: Added 'id' to fix accessibility warning ("A form field element should have an id...")
+          // FIX: Added 'id' for accessibility
           id="search-input" 
           onChange={onSearchChange}
           className="control-input"
@@ -30,7 +32,7 @@ const ControlPanel = ({
         />
       </div>
 
-      {/* Grouped Select Controls - Positioned second for Right placement by CSS */}
+      {/* Grouped Select Controls */}
       <div className="control-group">
         
         {/* Genre Select */}
@@ -44,7 +46,7 @@ const ControlPanel = ({
             aria-label="Select Genre Filter"
           >
             <option value="">All Genres</option>
-            {/* FIX: Uses genre.title, relies on correct data.js export */}
+            {/* Uses genre.title, relying on correct data.js export */}
             {genres.map(genre => (
               <option key={genre.id} value={genre.id}>
                 {genre.title} 
@@ -63,6 +65,7 @@ const ControlPanel = ({
             className="control-select"
             aria-label="Select Sort Order"
           >
+            {/* These values correspond to the sorting logic in MainApp.jsx */}
             <option value="newest">Default</option>
             <option value="a-z">A-Z Title</option>
             <option value="z-a">Z-A Title</option>
