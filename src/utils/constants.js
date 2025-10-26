@@ -5,7 +5,7 @@
 /** The number of podcast cards to display per page. */
 export const ITEMS_PER_PAGE = 12;
 
-/** The base URL for the podcast API. */
+/** The base URL for the podcast API. (Not exported, used internally by fetch function) */
 const API_BASE_URL = 'https://podcast-api.netlify.app';
 
 /**
@@ -66,4 +66,13 @@ export function formatDate(isoString) {
     month: 'short',
     day: 'numeric',
   });
+}
+
+/** * Maps an array of genre IDs to a comma-separated string of genre titles.
+ * @param {Array<number>} ids - Array of genre IDs.
+ * @returns {string} Comma-separated genre titles.
+ */
+export function mapGenreIdsToTitles(ids) {
+  if (!ids || ids.length === 0) return 'No Genres';
+  return ids.map(id => GENRE_MAPPING[id] || 'Unknown').join(', ');
 }
