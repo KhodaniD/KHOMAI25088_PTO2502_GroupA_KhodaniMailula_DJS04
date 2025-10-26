@@ -31,13 +31,11 @@ The core achievement was establishing a **centralized state management system** 
 
 ### Core Objectives (Search, Sort, Filter, Pagination)
 
-| Feature | Status | 
-| :--- | :--- | :--- |
-| **Search Functionality** | ✅ Implemented | Allows flexible searching by **any part of the podcast title** and updates results dynamically as the user types. |
-| **Sorting Options** | ✅ Implemented | Allows sorting by **Newest/Oldest updated date** and **Title A–Z / Z–A**. Sorting works in tandem with active search/filter criteria. |
-| **Filtering (Genre)** | ✅ Implemented | Enables **genre-based filtering** using the dropdown input, correctly mapping API IDs to titles using the local `data.js` file. |
-| **Pagination** | ✅ Implemented | Displays results in manageable pages (12 items per page). Pagination **respects all active search/filter/sort states** and keeps UI selections intact. |
-| **State Synchronisation** | ✅ Implemented | State is centralized in `MainApp.jsx` using `useMemo` to ensure **all controls reflect and synchronize** changes immediately and persistently. |
+* **Search Functionality:** Implemented a flexible search that allows matching **any part of the podcast title** and updates results dynamically as the user types.
+* **Sorting Options:** Supports sorting by **Newest/Oldest updated date** and **Title A–Z / Z–A**. Sorting works in tandem with active search and filter criteria.
+* **Filtering (Genre):** Enables **genre-based filtering** using the dropdown input, correctly mapping API IDs to **human-readable titles** using the local `data.js` file.
+* **Pagination:** Displays results in manageable pages (12 items per page). Pagination **respects all active search/filter/sort states** and keeps UI selections intact.
+* **State Synchronization:** State is centralized in `MainApp.jsx` using `useMemo` to ensure **all controls reflect and synchronize** changes immediately and persistently.
 
 ### Additional Quality & Maintainability
 

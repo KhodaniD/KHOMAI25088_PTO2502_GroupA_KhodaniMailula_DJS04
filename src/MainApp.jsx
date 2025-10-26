@@ -8,7 +8,7 @@ import PaginationControls from './components/PaginationControls.jsx';
 import { LoadingAndError } from "./components/LoadingAndError.jsx";
 import './MainApp.css'; 
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 16; // Number of podcasts per page
 
 /**
  * The main application component that manages state for the podcast browser.
