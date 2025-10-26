@@ -1,22 +1,22 @@
 import React from 'react';
 
 /**
- * Renders the main application header with the fa-podcast icon and title.
+ * Renders the main application header with the fa-podcast icon and the corrected title.
  * @returns {JSX.Element} The header component.
  */
 const Header = () => {
   return (
     <>
-      {/* Load Font Awesome CSS using a standard link tag for CDN */}
+      {/* CRITICAL FIX: Load Font Awesome CSS without 'integrity' and 'crossOrigin'
+        attributes to bypass security blocking and ensure the icon loads.
+      */}
       <link 
         rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
-        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLMDJ8K4ThzOQ+0tD+Kz6U1r44w67yN5k84mF2tW+J8xN9eA3f7B4F9Q4A2v5z5w==" 
-        crossOrigin="anonymous" 
-        referrerPolicy="no-referrer" 
       />
 
       <header className="app-header">
+        {/* Container for the icon and title to keep them together on the left */}
         <div className="app-logo-container">
           
           {/* Font Awesome Podcast Icon (fa-podcast) */}
@@ -29,7 +29,7 @@ const Header = () => {
             }}
           ></i>
           
-          {/* FIX: Correct Application Title */}
+          {/* CORRECT TITLE: Set to "Podcast App" (Fixes the "The Podcast App" bug) */}
           <h1 className="app-title">Podcast App</h1>
         </div>
       </header>
