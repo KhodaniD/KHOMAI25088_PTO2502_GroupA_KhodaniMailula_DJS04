@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// Using the most explicit and correct relative imports
-import { genres, GENRE_MAPPING } from './data.js';
-import Header from './components/Header.jsx';
-import ControlPanel from './components/ControlPanel.jsx';
-import PodcastGrid from './components/PodcastGrid.jsx';
-import PaginationControls from './components/PaginationControls.jsx';
-import LoadingAndError from './components/LoadingAndError.jsx';
+// FIX: Removed all file extensions. We rely on the bundler to resolve them.
+import { genres, GENRE_MAPPING } from './data';
+import Header from './components/Header';
+import ControlPanel from './components/ControlPanel';
+import PodcastGrid from './components/PodcastGrid';
+import PaginationControls from './components/PaginationControls';
+import LoadingAndError from './components/LoadingAndError';
 import './App.css'; 
 
 // Define how many items to show per page
